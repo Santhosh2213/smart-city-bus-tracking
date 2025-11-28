@@ -1,4 +1,4 @@
-// app/index.tsx - ENHANCED LANDING PAGE
+// app/index.tsx - CORRECTED VERSION
 import React from 'react';
 import {
   View,
@@ -10,51 +10,66 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function LandingPage() {
   const { width } = useWindowDimensions();
+  const router = useRouter();
   const isSmallScreen = width < 375;
 
   const features = [
     {
-      icon: '📍',
-      title: 'Live Tracking',
-      description: 'Real-time bus locations and arrival predictions',
-      color: ['#4F46E5', '#7C73E6']
-    },
-    {
-      icon: '📱',
+      icon: 'qr-code',
       title: 'QR Boarding',
       description: 'Quick and contactless boarding with QR codes',
-      color: ['#10B981', '#34D399']
+      color: ['#4F46E5', '#7C73E6'],
+      onPress: () => router.push('/QRBoarding')
     },
     {
-      icon: '👶',
+      icon: 'location',
+      title: 'Live Tracking',
+      description: 'Real-time bus locations and arrival predictions',
+      color: ['#10B981', '#34D399'],
+      onPress: () => router.push('/bus-tracker')
+    },
+    {
+      icon: 'people',
       title: 'Child Safety',
       description: 'Track your child\'s bus journey in real-time',
-      color: ['#F59E0B', '#FBBF24']
+      color: ['#F59E0B', '#FBBF24'],
+      onPress: () => router.push('/safety')
     },
     {
-      icon: '🚨',
+      icon: 'warning',
       title: 'SOS Alert',
       description: 'Instant emergency alerts with location sharing',
-      color: ['#EF4444', '#F87171']
+      color: ['#EF4444', '#F87171'],
+      onPress: () => router.push('/sos')
     },
     {
-      icon: '🗓️',
+      icon: 'time',
       title: 'Smart Schedule',
       description: 'Optimized routes and intelligent scheduling',
-      color: ['#8B5CF6', '#A78BFA']
+      color: ['#8B5CF6', '#A78BFA'],
+      onPress: () => router.push('/schedule')
     },
     {
-      icon: '📶',
+      icon: 'map',
       title: 'Offline Maps',
       description: 'Access maps without internet connection',
-      color: ['#06B6D4', '#22D3EE']
+      color: ['#06B6D4', '#22D3EE'],
+      onPress: () => router.push('/maps')
     },
   ];
+
+  const handleNotificationPress = () => {
+    router.push('/NotificationScreen');
+  };
+
+  const handleQRBoarding = () => {
+    router.push('/QRBoarding');
+  };
 
   return (
     <ScrollView 
@@ -67,6 +82,12 @@ export default function LandingPage() {
       <View style={styles.navbar}>
         <Text style={styles.logo}>SmartBus</Text>
         <View style={styles.navLinks}>
+          <TouchableOpacity 
+            style={styles.notificationIcon}
+            onPress={handleNotificationPress}
+          >
+            <Ionicons name="notifications-outline" size={24} color="#1e40af" />
+          </TouchableOpacity>
           <Link href="/about" asChild>
             <TouchableOpacity style={styles.navLink}>
               <Text style={styles.navLinkText}>About</Text>
@@ -96,19 +117,21 @@ export default function LandingPage() {
               Smarter Bus Travel, Safer Journeys
             </Text>
             <Text style={[styles.heroSubtitle, isSmallScreen && styles.heroSubtitleSmall]}>
-              Experience the future of public transportation with real-time tracking, 
-              smart scheduling, and enhanced safety features for everyone.
+              Experience the future of public transportation with QR boarding, 
+              real-time tracking, and enhanced safety features for everyone.
             </Text>
             <View style={[styles.heroButtons, isSmallScreen && styles.heroButtonsSmall]}>
+              <TouchableOpacity 
+                style={styles.primaryButton}
+                onPress={handleQRBoarding}
+              >
+                <Ionicons name="qr-code" size={20} color="#fff" />
+                <Text style={styles.primaryButtonText}>Scan QR Code</Text>
+              </TouchableOpacity>
               <Link href="/(tabs)" asChild>
-                <TouchableOpacity style={styles.primaryButton}>
-                  <Text style={styles.primaryButtonText}>Get Started</Text>
-                  <Ionicons name="arrow-forward" size={20} color="#fff" />
-                </TouchableOpacity>
-              </Link>
-              <Link href="/about" asChild>
                 <TouchableOpacity style={styles.secondaryButton}>
-                  <Text style={styles.secondaryButtonText}>Learn More</Text>
+                  <Text style={styles.secondaryButtonText}>Launch App</Text>
+                  <Ionicons name="arrow-forward" size={20} color="#1e40af" />
                 </TouchableOpacity>
               </Link>
             </View>
@@ -121,10 +144,12 @@ export default function LandingPage() {
                   colors={['#4F46E5', '#7C73E6']}
                   style={styles.mockupContent}
                 >
-                  <Text style={styles.mockupText}>SmartBus App</Text>
-                  <View style={styles.mockupFeature}>
-                    <Ionicons name="bus" size={32} color="#fff" />
-                    <Text style={styles.mockupFeatureText}>Live Tracking</Text>
+                  <View style={styles.qrVisual}>
+                    <View style={styles.qrCodePlaceholder}>
+                      <Ionicons name="qr-code" size={80} color="#fff" />
+                      <Text style={styles.qrText}>Scan to Board</Text>
+                    </View>
+                    <Text style={styles.mockupText}>SmartBus QR</Text>
                   </View>
                 </LinearGradient>
               </View>
@@ -149,18 +174,62 @@ export default function LandingPage() {
         
         <View style={styles.featuresGrid}>
           {features.map((feature, index) => (
-            <View key={index} style={styles.featureCard}>
+            <TouchableOpacity 
+              key={index} 
+              style={styles.featureCard}
+              onPress={feature.onPress}
+            >
               <LinearGradient
                 colors={feature.color}
                 style={styles.featureIcon}
               >
-                <Text style={styles.featureIconText}>{feature.icon}</Text>
+                <Ionicons name={feature.icon as any} size={24} color="#fff" />
               </LinearGradient>
               <Text style={styles.featureTitle}>{feature.title}</Text>
               <Text style={styles.featureDescription}>{feature.description}</Text>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
+      </View>
+
+      {/* QR Boarding Highlight Section */}
+      <View style={styles.qrHighlightSection}>
+        <LinearGradient
+          colors={['#4F46E5', '#7C73E6']}
+          style={styles.qrHighlightGradient}
+        >
+          <View style={styles.qrHighlightContent}>
+            <View style={styles.qrHighlightText}>
+              <Text style={styles.qrHighlightTitle}>Quick QR Boarding</Text>
+              <Text style={styles.qrHighlightSubtitle}>
+                Scan unique QR codes on buses for instant access to:
+              </Text>
+              <View style={styles.qrFeaturesList}>
+                <View style={styles.qrFeatureItem}>
+                  <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                  <Text style={styles.qrFeatureText}>Live Route Tracking</Text>
+                </View>
+                <View style={styles.qrFeatureItem}>
+                  <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                  <Text style={styles.qrFeatureText}>Real-time Arrival Updates</Text>
+                </View>
+                <View style={styles.qrFeatureItem}>
+                  <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                  <Text style={styles.qrFeatureText}>Safe Travel Check-in</Text>
+                </View>
+              </View>
+            </View>
+            <View style={styles.qrHighlightAction}>
+              <TouchableOpacity 
+                style={styles.qrActionButton}
+                onPress={handleQRBoarding}
+              >
+                <Ionicons name="qr-code" size={24} color="#4F46E5" />
+                <Text style={styles.qrActionText}>Try QR Boarding</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </LinearGradient>
       </View>
 
       {/* Stats Section */}
@@ -197,14 +266,16 @@ export default function LandingPage() {
           Join thousands of satisfied users and experience smarter bus travel today
         </Text>
         <View style={[styles.ctaButtons, isSmallScreen && styles.ctaButtonsSmall]}>
+          <TouchableOpacity 
+            style={styles.ctaPrimary}
+            onPress={handleQRBoarding}
+          >
+            <Ionicons name="qr-code" size={20} color="#fff" />
+            <Text style={styles.ctaPrimaryText}>Try QR Boarding</Text>
+          </TouchableOpacity>
           <Link href="/(tabs)" asChild>
-            <TouchableOpacity style={styles.ctaPrimary}>
-              <Text style={styles.ctaPrimaryText}>Start Free Trial</Text>
-            </TouchableOpacity>
-          </Link>
-          <Link href="/contact" asChild>
             <TouchableOpacity style={styles.ctaSecondary}>
-              <Text style={styles.ctaSecondaryText}>Contact Sales</Text>
+              <Text style={styles.ctaSecondaryText}>Explore Features</Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -224,6 +295,19 @@ export default function LandingPage() {
           </View>
           
           <View style={styles.footerLinks}>
+            <Text style={styles.footerHeading}>Features</Text>
+            <TouchableOpacity onPress={handleQRBoarding}>
+              <Text style={styles.footerLink}>QR Boarding</Text>
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <Text style={styles.footerLink}>Live Tracking</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/sos')}>
+              <Text style={styles.footerLink}>Safety</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.footerLinks}>
             <Text style={styles.footerHeading}>Company</Text>
             <Link href="/about" asChild>
               <TouchableOpacity>
@@ -237,19 +321,6 @@ export default function LandingPage() {
             </Link>
             <TouchableOpacity>
               <Text style={styles.footerLink}>Careers</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.footerLinks}>
-            <Text style={styles.footerHeading}>Legal</Text>
-            <TouchableOpacity>
-              <Text style={styles.footerLink}>Privacy</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text style={styles.footerLink}>Terms</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text style={styles.footerLink}>Security</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -286,6 +357,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
+  },
+  notificationIcon: {
+    padding: 8,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 12,
   },
   navLink: {
     paddingHorizontal: 8,
@@ -369,14 +445,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   secondaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#ffffff',
+    gap: 8,
   },
   secondaryButtonText: {
-    color: '#ffffff',
+    color: '#1e40af',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -404,20 +482,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
+  qrVisual: {
+    alignItems: 'center',
+  },
+  qrCodePlaceholder: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  qrText: {
+    color: '#ffffff',
+    fontSize: 14,
+    marginTop: 8,
+    fontWeight: '600',
+  },
   mockupText: {
     color: '#ffffff',
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  mockupFeature: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  mockupFeatureText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
   },
   waveDivider: {
     position: 'absolute',
@@ -476,15 +557,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   featureIcon: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  featureIconText: {
-    fontSize: 28,
+    marginBottom: 12,
   },
   featureTitle: {
     fontSize: 16,
@@ -498,6 +576,71 @@ const styles = StyleSheet.create({
     color: '#64748b',
     textAlign: 'center',
     lineHeight: 16,
+  },
+  qrHighlightSection: {
+    marginHorizontal: 20,
+    marginBottom: 40,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  qrHighlightGradient: {
+    padding: 30,
+  },
+  qrHighlightContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  qrHighlightText: {
+    flex: 1,
+    paddingRight: 20,
+  },
+  qrHighlightTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 12,
+  },
+  qrHighlightSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  qrFeaturesList: {
+    gap: 8,
+  },
+  qrFeatureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  qrFeatureText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  qrHighlightAction: {
+    alignItems: 'center',
+  },
+  qrActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  qrActionText: {
+    color: '#4F46E5',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   statsSection: {
     paddingVertical: 50,
@@ -556,10 +699,13 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   ctaPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#4F46E5',
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 12,
+    gap: 8,
   },
   ctaPrimaryText: {
     color: '#ffffff',
