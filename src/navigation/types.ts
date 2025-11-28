@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // /src/navigation/types.ts
 
 // Root Stack Param List
@@ -128,3 +129,16 @@ export type RootStackParamList = {
       interface RootParamList extends RootStackParamList {}
     }
   }
+=======
+// src/navigation/types.ts
+export type MainStackParamList = {
+    Home: undefined;
+    Profile: undefined;
+    QRScan: undefined;
+    SOS: undefined;
+    ChildMode: undefined;
+    OfflineMap: undefined;
+    Notifications: undefined;
+    BusDetails: { bus: any };
+  };
+>>>>>>> 2f55e0a69499cee8070a62c09ab718a1fcc98400
