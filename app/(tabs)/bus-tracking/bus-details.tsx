@@ -19,7 +19,7 @@ import { TrackingContext } from '../../../src/context/TrackingContext';
 
 type BusTrackingStackParamList = {
   LiveTracking: undefined;
-  BusDetails: { bus: any };
+  BusDetails: { buses: any[] };
   OfflineMap: undefined;
 };
 
@@ -30,57 +30,164 @@ type BusDetailsScreenNavigationProp = NativeStackNavigationProp<
 
 type BusDetailsRouteProp = RouteProp<BusTrackingStackParamList, 'BusDetails'>;
 
-// Fallback bus data in case params are not provided
-const fallbackBus = {
-  id: '1',
-  route: 'Route 101',
-  currentLocation: 'Downtown Station',
-  destination: 'University Campus',
-  arrivalTime: 8,
-  speed: 35,
-  passengerLoad: 65,
-  status: 'moving',
-  nextStop: 'City Center',
-  progress: 65
-};
+// Fallback buses data in case params are not provided
+const fallbackBuses = [
+  {
+    id: '1',
+    busNumber: 'KA-01-AB-1234',
+    route: 'Route 101',
+    busType: 'AC',
+    source: 'Downtown Station',
+    destination: 'University Campus',
+    departureTime: '08:00 AM',
+    arrivalTime: '08:45 AM',
+    totalDistance: '15 km',
+    seatAvailability: 25,
+    totalSeats: 40,
+    ticketPrice: '₹45',
+    status: 'on-time',
+    currentLocation: 'Downtown Station',
+    speed: 35,
+    passengerLoad: 65,
+    nextStop: 'City Center',
+    progress: 65
+  },
+  {
+    id: '2',
+    busNumber: 'KA-01-CD-5678',
+    route: 'Route 102',
+    busType: 'Non-AC',
+    source: 'City Center',
+    destination: 'Railway Station',
+    departureTime: '08:15 AM',
+    arrivalTime: '09:00 AM',
+    totalDistance: '12 km',
+    seatAvailability: 12,
+    totalSeats: 40,
+    ticketPrice: '₹30',
+    status: 'delayed',
+    currentLocation: 'Main Road',
+    speed: 28,
+    passengerLoad: 85,
+    nextStop: 'Market Square',
+    progress: 45
+  },
+  {
+    id: '3',
+    busNumber: 'KA-01-EF-9012',
+    route: 'Express 201',
+    busType: 'Express',
+    source: 'Airport',
+    destination: 'City Center',
+    departureTime: '08:30 AM',
+    arrivalTime: '09:15 AM',
+    totalDistance: '20 km',
+    seatAvailability: 38,
+    totalSeats: 40,
+    ticketPrice: '₹60',
+    status: 'on-time',
+    currentLocation: 'Airport Terminal',
+    speed: 40,
+    passengerLoad: 25,
+    nextStop: 'Highway Junction',
+    progress: 15
+  },
+  {
+    id: '4',
+    busNumber: 'KA-01-GH-3456',
+    route: 'Route 105',
+    busType: 'AC Sleeper',
+    source: 'Bus Depot',
+    destination: 'Beach Front',
+    departureTime: '09:00 AM',
+    arrivalTime: '10:30 AM',
+    totalDistance: '25 km',
+    seatAvailability: 15,
+    totalSeats: 30,
+    ticketPrice: '₹75',
+    status: 'on-time',
+    currentLocation: 'Bus Depot',
+    speed: 0,
+    passengerLoad: 20,
+    nextStop: 'Central Mall',
+    progress: 0
+  }
+];
 
 const BusDetailsScreen: React.FC = () => {
   const navigation = useNavigation<BusDetailsScreenNavigationProp>();
   const route = useRoute<BusDetailsRouteProp>();
   
-  // Safely get bus from route params with fallback
-  const bus = route.params?.bus || fallbackBus;
+  // Safely get buses from route params with fallback
+  const buses = route.params?.buses || fallbackBuses;
   
   const { setAlert } = useContext(TrackingContext);
   
-  const [isAlertSet, setIsAlertSet] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [alertStates, setAlertStates] = useState<{[key: string]: boolean}>({});
+  const [favoriteStates, setFavoriteStates] = useState<{[key: string]: boolean}>({});
 
-  const handleSetAlert = () => {
-    setAlert(bus.id);
-    setIsAlertSet(true);
+  const handleSetAlert = (busId: string) => {
+    setAlert(busId);
+    setAlertStates(prev => ({...prev, [busId]: true}));
+    const bus = buses.find(b => b.id === busId);
     Alert.alert(
       'Alert Set',
-      `You will be notified when ${bus.route} is 10 minutes away`
+      `You will be notified when ${bus?.route} is 10 minutes away`
     );
   };
 
-  const handleShareBus = async () => {
+  const handleShareBus = async (bus: any) => {
     try {
       await Share.share({
-        message: `Check out ${bus.route} bus! Current location: ${bus.currentLocation}. Arriving in ${bus.arrivalTime} minutes.`,
+        message: `Check out ${bus.route} bus! ${bus.source} to ${bus.destination}. Departure: ${bus.departureTime}, Arrival: ${bus.arrivalTime}. Ticket: ${bus.ticketPrice}`,
       });
     } catch (error) {
       Alert.alert('Error', 'Failed to share bus information');
     }
   };
 
-  const handleToggleFavorite = () => {
-    setIsFavorite(!isFavorite);
+  const handleToggleFavorite = (busId: string) => {
+    setFavoriteStates(prev => {
+      const newState = {...prev, [busId]: !prev[busId]};
+      const bus = buses.find(b => b.id === busId);
+      Alert.alert(
+        newState[busId] ? 'Added to Favorites' : 'Removed from Favorites',
+        `${bus?.route} ${newState[busId] ? 'added to' : 'removed from'} your favorites`
+      );
+      return newState;
+    });
+  };
+
+  const handleBookNow = (bus: any) => {
     Alert.alert(
-      isFavorite ? 'Removed from Favorites' : 'Added to Favorites',
-      `${bus.route} ${isFavorite ? 'removed from' : 'added to'} your favorites`
+      'Book Ticket',
+      `Proceed to book ${bus.route}?\n${bus.source} → ${bus.destination}\nDeparture: ${bus.departureTime}\nPrice: ${bus.ticketPrice}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Confirm', onPress: () => {
+          // Navigate to booking screen or process booking
+          Alert.alert('Success', `Booking confirmed for ${bus.route}`);
+        }},
+      ]
     );
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'on-time': return '#10B981';
+      case 'delayed': return '#F59E0B';
+      case 'cancelled': return '#EF4444';
+      default: return '#6B7280';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'on-time': return 'On Time';
+      case 'delayed': return 'Delayed';
+      case 'cancelled': return 'Cancelled';
+      default: return 'Unknown';
+    }
   };
 
   const getPassengerLoadColor = (load: number) => {
@@ -89,23 +196,115 @@ const BusDetailsScreen: React.FC = () => {
     return '#10B981';
   };
 
-  const getPassengerLoadText = (load: number) => {
-    if (load > 80) return 'Crowded';
-    if (load > 50) return 'Moderate';
-    return 'Empty';
+  const getSeatAvailabilityColor = (available: number, total: number) => {
+    const percentage = (available / total) * 100;
+    if (percentage > 50) return '#10B981';
+    if (percentage > 20) return '#F59E0B';
+    return '#EF4444';
   };
 
-  const DetailRow: React.FC<{ icon: string; label: string; value: string }> = ({
-    icon,
-    label,
-    value,
-  }) => (
-    <View style={styles.detailRow}>
-      <View style={styles.detailLabel}>
-        <Ionicons name={icon as any} size={20} color="#666" />
-        <Text style={styles.detailLabelText}>{label}</Text>
+  const BusCard: React.FC<{ bus: any }> = ({ bus }) => (
+    <View style={styles.busCard}>
+      {/* Bus Header */}
+      <View style={styles.busHeader}>
+        <View style={styles.busBasicInfo}>
+          <Text style={styles.busRoute}>{bus.route}</Text>
+          <Text style={styles.busNumber}>{bus.busNumber}</Text>
+          <View style={styles.busTypeBadge}>
+            <Text style={styles.busTypeText}>{bus.busType}</Text>
+          </View>
+        </View>
+        <View style={styles.busActions}>
+          <TouchableOpacity 
+            style={styles.favoriteButton}
+            onPress={() => handleToggleFavorite(bus.id)}
+          >
+            <Ionicons 
+              name={favoriteStates[bus.id] ? "heart" : "heart-outline"} 
+              size={24} 
+              color={favoriteStates[bus.id] ? "#EF4444" : "#666"} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.shareButton}
+            onPress={() => handleShareBus(bus)}
+          >
+            <Ionicons name="share-outline" size={20} color="#666" />
+          </TouchableOpacity>
+        </View>
       </View>
-      <Text style={styles.detailValue}>{value}</Text>
+
+      {/* Route Information */}
+      <View style={styles.routeInfo}>
+        <View style={styles.routeSegment}>
+          <Text style={styles.routeTime}>{bus.departureTime}</Text>
+          <Text style={styles.routePlace}>{bus.source}</Text>
+        </View>
+        <View style={styles.routeLine}>
+          <View style={styles.routeDot} />
+          <View style={styles.routeLineMiddle} />
+          <View style={styles.routeDot} />
+        </View>
+        <View style={styles.routeSegment}>
+          <Text style={styles.routeTime}>{bus.arrivalTime}</Text>
+          <Text style={styles.routePlace}>{bus.destination}</Text>
+        </View>
+      </View>
+
+      {/* Bus Details Grid */}
+      <View style={styles.detailsGrid}>
+        <View style={styles.detailItem}>
+          <Ionicons name="speedometer-outline" size={16} color="#666" />
+          <Text style={styles.detailLabel}>Distance</Text>
+          <Text style={styles.detailValue}>{bus.totalDistance}</Text>
+        </View>
+        <View style={styles.detailItem}>
+          <Ionicons name="people-outline" size={16} color="#666" />
+          <Text style={styles.detailLabel}>Seats</Text>
+          <Text style={[styles.detailValue, { color: getSeatAvailabilityColor(bus.seatAvailability, bus.totalSeats) }]}>
+            {bus.seatAvailability}/{bus.totalSeats}
+          </Text>
+        </View>
+        <View style={styles.detailItem}>
+          <Ionicons name="cash-outline" size={16} color="#666" />
+          <Text style={styles.detailLabel}>Price</Text>
+          <Text style={styles.detailValue}>{bus.ticketPrice}</Text>
+        </View>
+        <View style={styles.detailItem}>
+          <Ionicons name="time-outline" size={16} color="#666" />
+          <Text style={styles.detailLabel}>Status</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(bus.status) }]}>
+            <Text style={styles.statusText}>{getStatusText(bus.status)}</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Action Buttons */}
+      <View style={styles.cardActions}>
+        <TouchableOpacity 
+          style={[styles.alertButton, alertStates[bus.id] && styles.alertButtonActive]}
+          onPress={() => handleSetAlert(bus.id)}
+        >
+          <Ionicons 
+            name={alertStates[bus.id] ? "notifications" : "notifications-outline"} 
+            size={18} 
+            color={alertStates[bus.id] ? "#1a73e8" : "#666"} 
+          />
+          <Text style={[
+            styles.alertButtonText,
+            alertStates[bus.id] && styles.alertButtonTextActive
+          ]}>
+            {alertStates[bus.id] ? 'Alert Set' : 'Set Alert'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.bookButton}
+          onPress={() => handleBookNow(bus)}
+        >
+          <Text style={styles.bookButtonText}>Book Now</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -126,15 +325,10 @@ const BusDetailsScreen: React.FC = () => {
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>Bus Details</Text>
-            <Text style={styles.headerSubtitle}>{bus.route}</Text>
+            <Text style={styles.headerTitle}>Available Buses</Text>
+            <Text style={styles.headerSubtitle}>{buses.length} buses found</Text>
           </View>
-          <TouchableOpacity 
-            style={styles.shareButton}
-            onPress={handleShareBus}
-          >
-            <Ionicons name="share-outline" size={20} color="#fff" />
-          </TouchableOpacity>
+          <View style={styles.headerPlaceholder} />
         </View>
       </LinearGradient>
 
@@ -142,172 +336,16 @@ const BusDetailsScreen: React.FC = () => {
         style={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Bus Overview Card */}
-        <View style={styles.overviewCard}>
-          <View style={styles.overviewHeader}>
-            <View style={styles.busInfo}>
-              <Text style={styles.busRoute}>{bus.route}</Text>
-              <Text style={styles.busDescription}>Express service to {bus.destination}</Text>
-            </View>
-            <TouchableOpacity 
-              style={styles.favoriteButton}
-              onPress={handleToggleFavorite}
-            >
-              <Ionicons 
-                name={isFavorite ? "heart" : "heart-outline"} 
-                size={24} 
-                color={isFavorite ? "#EF4444" : "#666"} 
-              />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.statusSection}>
-            <View style={styles.statusItem}>
-              <Text style={styles.statusLabel}>Current Status</Text>
-              <View style={[
-                styles.statusBadge,
-                bus.status === 'moving' ? styles.statusMoving : styles.statusStopped
-              ]}>
-                <Text style={styles.statusText}>
-                  {bus.status === 'moving' ? 'Moving' : 'Stopped'}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.statusItem}>
-              <Text style={styles.statusLabel}>Passenger Load</Text>
-              <View style={[
-                styles.passengerLoadBadge,
-                { backgroundColor: getPassengerLoadColor(bus.passengerLoad) }
-              ]}>
-                <Text style={styles.passengerLoadText}>
-                  {getPassengerLoadText(bus.passengerLoad)}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.actionsSection}>
-          <TouchableOpacity 
-            style={[styles.actionButton, isAlertSet && styles.actionButtonActive]}
-            onPress={handleSetAlert}
-          >
-            <Ionicons 
-              name={isAlertSet ? "notifications" : "notifications-outline"} 
-              size={24} 
-              color={isAlertSet ? "#1a73e8" : "#666"} 
-            />
-            <Text style={[
-              styles.actionText,
-              isAlertSet && styles.actionTextActive
-            ]}>
-              {isAlertSet ? 'Alert Set' : 'Set Alert'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('LiveTracking')}
-          >
-            <Ionicons name="locate-outline" size={24} color="#666" />
-            <Text style={styles.actionText}>Live Track</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="time-outline" size={24} color="#666" />
-            <Text style={styles.actionText}>Schedule</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Bus Details */}
-        <View style={styles.detailsSection}>
-          <Text style={styles.sectionTitle}>Bus Information</Text>
-          
-          <View style={styles.detailsCard}>
-            <DetailRow
-              icon="location-outline"
-              label="Current Location"
-              value={bus.currentLocation}
-            />
-            <DetailRow
-              icon="navigate-outline"
-              label="Destination"
-              value={bus.destination}
-            />
-            <DetailRow
-              icon="time-outline"
-              label="Arrival Time"
-              value={`${bus.arrivalTime} minutes`}
-            />
-            <DetailRow
-              icon="speedometer-outline"
-              label="Current Speed"
-              value={`${bus.speed} km/h`}
-            />
-            <DetailRow
-              icon="people-outline"
-              label="Passenger Count"
-              value={`${bus.passengerLoad}% capacity`}
-            />
-            <DetailRow
-              icon="bus-outline"
-              label="Bus Type"
-              value="Air Conditioned"
-            />
-          </View>
-        </View>
-
-        {/* Route Information */}
-        <View style={styles.routeSection}>
-          <Text style={styles.sectionTitle}>Route Information</Text>
-          
-          <View style={styles.routeCard}>
-            <View style={styles.routeTimeline}>
-              <View style={styles.timelineItem}>
-                <View style={styles.timelineDot} />
-                <View style={styles.timelineContent}>
-                  <Text style={styles.timelineTitle}>Starting Point</Text>
-                  <Text style={styles.timelineSubtitle}>Bus Depot</Text>
-                  <Text style={styles.timelineTime}>08:00 AM</Text>
-                </View>
-              </View>
-              
-              <View style={styles.timelineItem}>
-                <View style={[styles.timelineDot, styles.timelineDotCurrent]} />
-                <View style={styles.timelineContent}>
-                  <Text style={styles.timelineTitle}>Current Location</Text>
-                  <Text style={styles.timelineSubtitle}>{bus.currentLocation}</Text>
-                  <Text style={styles.timelineTime}>Now</Text>
-                </View>
-              </View>
-              
-              <View style={styles.timelineItem}>
-                <View style={styles.timelineDot} />
-                <View style={styles.timelineContent}>
-                  <Text style={styles.timelineTitle}>Next Stop</Text>
-                  <Text style={styles.timelineSubtitle}>{bus.nextStop || 'City Center'}</Text>
-                  <Text style={styles.timelineTime}>
-                    {bus.arrivalTime} min
-                  </Text>
-                </View>
-              </View>
-              
-              <View style={styles.timelineItem}>
-                <View style={styles.timelineDot} />
-                <View style={styles.timelineContent}>
-                  <Text style={styles.timelineTitle}>Final Destination</Text>
-                  <Text style={styles.timelineSubtitle}>{bus.destination}</Text>
-                  <Text style={styles.timelineTime}>45 min</Text>
-                </View>
-              </View>
-            </View>
-          </View>
+        {/* Buses List */}
+        <View style={styles.busesList}>
+          {buses.map((bus) => (
+            <BusCard key={bus.id} bus={bus} />
+          ))}
         </View>
 
         {/* Additional Information */}
         <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Additional Info</Text>
+          <Text style={styles.sectionTitle}>Bus Amenities</Text>
           
           <View style={styles.infoCard}>
             <View style={styles.infoItem}>
@@ -370,211 +408,184 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.9)',
     marginTop: 4,
   },
-  shareButton: {
+  headerPlaceholder: {
     width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   content: {
     flex: 1,
   },
-  overviewCard: {
+  busesList: {
+    padding: 16,
+    gap: 16,
+  },
+  busCard: {
     backgroundColor: '#ffffff',
-    margin: 16,
-    padding: 20,
     borderRadius: 16,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  overviewHeader: {
+  busHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 16,
   },
-  busInfo: {
+  busBasicInfo: {
     flex: 1,
   },
   busRoute: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#1a1a1a',
     marginBottom: 4,
   },
-  busDescription: {
+  busNumber: {
     fontSize: 14,
     color: '#666',
-    lineHeight: 20,
+    marginBottom: 8,
+  },
+  busTypeBadge: {
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  busTypeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1a73e8',
+  },
+  busActions: {
+    flexDirection: 'row',
+    gap: 8,
   },
   favoriteButton: {
     padding: 4,
   },
-  statusSection: {
+  shareButton: {
+    padding: 4,
+  },
+  routeInfo: {
     flexDirection: 'row',
-    gap: 16,
-  },
-  statusItem: {
-    flex: 1,
-  },
-  statusLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  statusMoving: {
-    backgroundColor: '#DCFCE7',
-  },
-  statusStopped: {
-    backgroundColor: '#FEF9C3',
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#166534',
-  },
-  passengerLoadBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  passengerLoadText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  actionsSection: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 12,
-    marginBottom: 16,
-  },
-  actionButton: {
-    flex: 1,
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    marginBottom: 20,
   },
-  actionButtonActive: {
-    borderColor: '#1a73e8',
-    backgroundColor: '#f0f7ff',
+  routeSegment: {
+    flex: 1,
   },
-  actionText: {
-    marginTop: 8,
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#666',
-  },
-  actionTextActive: {
-    color: '#1a73e8',
-  },
-  detailsSection: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
+  routeTime: {
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#1a1a1a',
-    marginBottom: 12,
+    marginBottom: 4,
   },
-  detailsCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
+  routePlace: {
+    fontSize: 14,
+    color: '#666',
   },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  routeLine: {
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    marginHorizontal: 12,
   },
-  detailLabel: {
+  routeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#1a73e8',
+  },
+  routeLineMiddle: {
+    width: 2,
+    height: 20,
+    backgroundColor: '#e5e7eb',
+    marginVertical: 2,
+  },
+  detailsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    marginBottom: 20,
+  },
+  detailItem: {
+    width: '48%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  detailLabelText: {
-    fontSize: 14,
+  detailLabel: {
+    fontSize: 12,
     color: '#666',
+    flex: 1,
   },
   detailValue: {
     fontSize: 14,
     fontWeight: '600',
     color: '#1a1a1a',
   },
-  routeSection: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  routeCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-  },
-  routeTimeline: {
-    paddingLeft: 8,
-  },
-  timelineItem: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
-  timelineDot: {
-    width: 12,
-    height: 12,
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: '#e5e7eb',
-    marginTop: 4,
-    marginRight: 16,
   },
-  timelineDotCurrent: {
-    backgroundColor: '#1a73e8',
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    shadowColor: '#1a73e8',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#ffffff',
   },
-  timelineContent: {
+  cardActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  alertButton: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
-  timelineTitle: {
+  alertButtonActive: {
+    borderColor: '#1a73e8',
+    backgroundColor: '#f0f7ff',
+  },
+  alertButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 2,
-  },
-  timelineSubtitle: {
-    fontSize: 12,
     color: '#666',
-    marginBottom: 2,
   },
-  timelineTime: {
-    fontSize: 11,
+  alertButtonTextActive: {
     color: '#1a73e8',
-    fontWeight: '600',
+  },
+  bookButton: {
+    flex: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    backgroundColor: '#1a73e8',
+    borderRadius: 8,
+  },
+  bookButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#ffffff',
   },
   infoSection: {
     paddingHorizontal: 16,
     marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 12,
   },
   infoCard: {
     backgroundColor: '#ffffff',
