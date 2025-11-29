@@ -6,8 +6,18 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#1a73e8',
-        tabBarInactiveTintColor: '#64748b',
+        tabBarActiveTintColor: '#291C0E',
+        tabBarInactiveTintColor: '#6E473B',
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: 'rgba(167, 141, 120, 0.2)',
+          elevation: 8,
+          shadowColor: '#291C0E',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.05,
+          shadowRadius: 16,
+        },
       }}
     >
       <Tabs.Screen
@@ -17,6 +27,17 @@ export default function TabLayout() {
           tabBarIcon: ({ size, color }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ size, color }) => (
+            <Ionicons name="person" size={size} color={color} />
+          ),
+          headerShown: false,
         }}
       />
     </Tabs>
