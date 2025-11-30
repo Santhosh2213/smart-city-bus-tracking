@@ -8,6 +8,7 @@ export default function RootLayout() {
     <AuthProvider>
       <TrackingProvider>
         <Stack>
+<<<<<<< HEAD
           <Stack.Screen 
             name="index" 
             options={{ 
@@ -49,6 +50,15 @@ export default function RootLayout() {
               animation: 'slide_from_right'
             }} 
           />
+=======
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="about" options={{ headerShown: false }} />
+          <Stack.Screen name="contact" options={{ headerShown: false }} />
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="profile-edit" options={{ headerShown: false }} />
+          <Stack.Screen name="settings" options={{ headerShown: false }} />
+>>>>>>> 6a2e44727d483020c3258e3ba209a2c6f4f7391e
         </Stack>
       </TrackingProvider>
     </AuthProvider>

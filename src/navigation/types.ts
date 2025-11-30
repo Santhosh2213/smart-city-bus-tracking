@@ -9,6 +9,7 @@ export type MainStackParamList = {
     Notifications: undefined;
     BusDetails: { bus: any };
   };
+<<<<<<< HEAD
   export type RootStackParamList = {
   // ... your existing routes
   Notification: undefined;
@@ -21,3 +22,5 @@ export type MainTabParamList = {
   Notification: undefined;
   // ... other tabs
 };
+=======
+>>>>>>> 6a2e44727d483020c3258e3ba209a2c6f4f7391e
