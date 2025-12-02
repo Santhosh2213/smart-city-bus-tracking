@@ -1,40 +1,34 @@
-// app/(tabs)/index.tsx - UPDATED WITH LOCATION SUGGESTIONS & REAL LOCATION
-import React, { useState, useContext, useEffect } from 'react';
+// app/(tabs)/index.tsx - FIXED VERSION
+import { Ionicons } from '@expo/vector-icons';
+import { Link, router, useNavigation } from 'expo-router'; // Changed import
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  StatusBar,
-  SafeAreaView,
-  useWindowDimensions,
-  TextInput,
   Alert,
   FlatList,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+  ActivityIndicator,
+  Modal,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MainStackParamList } from '../../src/navigation/types';
 import { AuthContext } from '../../src/context/AuthContext';
 import { TrackingContext } from '../../src/context/TrackingContext';
-import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
-
-type HomeScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'Home'>;
-
-// Mock city data - In real app, this would come from an API
-const CITIES = [
-  'Chennai', 'Chennai Central', 'Chennai Egmore', 'Chennai Airport',
-  'Bangalore', 'Mumbai', 'Delhi', 'Kolkata', 'Hyderabad', 'Pune',
-  'Ahmedabad', 'Jaipur', 'Lucknow', 'Chandigarh', 'Kochi'
-];
+import { BusService } from '../../src/services/busService';
+// Add these imports at the top of index.tsx
+import { database } from '../../src/services/firebase'; // Adjust path as needed
+import { ref, push, set } from 'firebase/database';
 
 const HomeScreen: React.FC = () => {
-  const navigation = useNavigation<HomeScreenNavigationProp>();
   const { user } = useContext(AuthContext);
-  const { currentBus, nearbyBuses, isLoading } = useContext(TrackingContext);
+  const { currentBus, nearbyBuses, isLoading, refreshTracking } = useContext(TrackingContext);
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 375;
   
@@ -47,19 +41,20 @@ const HomeScreen: React.FC = () => {
   const [activeInput, setActiveInput] = useState<'from' | 'to' | null>(null);
   const [currentLocation, setCurrentLocation] = useState<string>('');
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<any[]>([]);
+  const [liveBuses, setLiveBuses] = useState<any[]>([]);
+  const [isLoadingBuses, setIsLoadingBuses] = useState(false);
+  const [showCityModal, setShowCityModal] = useState(false);
+  const [modalInputType, setModalInputType] = useState<'from' | 'to'>('from');
 
-  // Mock data for schedules
-  const schedules = [
-    { id: '1', route: 'Route 101', time: '08:30 AM', from: 'Downtown', to: 'University', status: 'On Time' },
-    { id: '2', route: 'Route 202', time: '09:15 AM', from: 'Mall', to: 'Airport', status: 'Delayed' },
-    { id: '3', route: 'Route 303', time: '10:00 AM', from: 'Station', to: 'Hospital', status: 'On Time' },
-  ];
+  // Get all Tamil Nadu cities for search
+  const CITIES = BusService.getCityNames();
 
   const features = [
     {
       icon: 'location',
       title: 'Live Tracking',
-      action: 'tracking',
+      action: 'live-tracking',
       color: '#6E473B',
       description: 'Real-time bus locations'
     },
@@ -80,10 +75,10 @@ const HomeScreen: React.FC = () => {
     {
       icon: 'cloud-offline',
       title: 'Offline Map',
-      action: 'offline',
+      action: 'offline-map',
       color: '#6E473B',
       description: 'No internet needed'
-    },
+    }
   ];
 
   const quickActions = [
@@ -97,7 +92,7 @@ const HomeScreen: React.FC = () => {
       icon: 'warning',
       title: 'SOS',
       action: 'sos',
-      color: '#EF4444' // Changed to red for SOS
+      color: '#6E473B' 
     },
     {
       icon: 'notifications',
@@ -116,6 +111,31 @@ const HomeScreen: React.FC = () => {
   // Get current location on component mount
   useEffect(() => {
     getCurrentLocation();
+    loadRecentSearches();
+    setupRealTimeBuses();
+  }, []);
+
+  const setupRealTimeBuses = useCallback(() => {
+    setIsLoadingBuses(true);
+    
+    const updateBuses = async () => {
+      try {
+        const buses = await BusService.getAllBuses();
+        setLiveBuses(buses);
+        setIsLoadingBuses(false);
+      } catch (error) {
+        console.error('Error fetching buses:', error);
+        setIsLoadingBuses(false);
+      }
+    };
+
+    // Initial fetch
+    updateBuses();
+
+    // Set up interval for updates (every 30 seconds)
+    const interval = setInterval(updateBuses, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const getCurrentLocation = async () => {
@@ -129,20 +149,17 @@ const HomeScreen: React.FC = () => {
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({});
-      
-      // Reverse geocoding to get address
-      let address = await Location.reverseGeocodeAsync({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude
+      let location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High
       });
+      
+      // Find nearest city from Tamil Nadu cities
+      const nearestCity = findNearestCity(location.coords.latitude, location.coords.longitude);
+      setCurrentLocation(nearestCity);
+      
+      // Auto-fill "From" field with current location
+      setSearchData(prev => ({ ...prev, from: nearestCity }));
 
-      if (address.length > 0) {
-        const { city, district, region } = address[0];
-        setCurrentLocation(city || district || region || 'Your Location');
-      } else {
-        setCurrentLocation('Your Current Location');
-      }
     } catch (error) {
       console.error('Error getting location:', error);
       setCurrentLocation('Unable to get location');
@@ -151,99 +168,196 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-  // Filter suggestions based on input
-  const filterSuggestions = (text: string, field: 'from' | 'to') => {
-    if (text.length > 0) {
-      const filtered = CITIES.filter(city => 
-        city.toLowerCase().includes(text.toLowerCase())
-      );
-      setSuggestions(prev => ({ ...prev, [field]: filtered }));
-    } else {
-      setSuggestions(prev => ({ ...prev, [field]: [] }));
-    }
+  const findNearestCity = (lat: number, lng: number): string => {
+    // Mock city coordinates - in a real app, you'd have actual coordinates
+    const cities = {
+      'Chennai': { lat: 13.0827, lng: 80.2707 },
+      'Coimbatore': { lat: 11.0168, lng: 76.9558 },
+      'Madurai': { lat: 9.9252, lng: 78.1198 },
+      'Trichy': { lat: 10.7905, lng: 78.7047 },
+      'Salem': { lat: 11.6643, lng: 78.1460 },
+      'Tirunelveli': { lat: 8.7139, lng: 77.7567 },
+      'Vellore': { lat: 12.9165, lng: 79.1325 },
+      'Erode': { lat: 11.3410, lng: 77.7172 },
+      'Kanyakumari': { lat: 8.0883, lng: 77.5385 },
+      'Ooty': { lat: 11.4102, lng: 76.6950 }
+    };
+    
+    let nearestCity = 'Chennai';
+    let minDistance = Infinity;
+
+    Object.entries(cities).forEach(([city, coords]) => {
+      const distance = calculateDistance(lat, lng, coords.lat, coords.lng);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestCity = city;
+      }
+    });
+
+    return nearestCity;
+  };
+
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  // Load recent searches
+  const loadRecentSearches = async () => {
+    // Mock recent searches
+    const mockSearches = [
+      { id: '1', from: 'Chennai', to: 'Coimbatore', timestamp: 'Today' },
+      { id: '2', from: 'Madurai', to: 'Trichy', timestamp: 'Yesterday' },
+      { id: '3', from: 'Salem', to: 'Erode', timestamp: '2 days ago' },
+    ];
+    setRecentSearches(mockSearches);
+  };
+
+  // Open city modal
+  const openCityModal = (inputType: 'from' | 'to') => {
+    setModalInputType(inputType);
+    setShowCityModal(true);
+  };
+
+  // Handle city selection from modal
+  const handleCitySelect = (city: string) => {
+    setSearchData(prev => ({ ...prev, [modalInputType]: city }));
+    setShowCityModal(false);
   };
 
   const handleInputChange = (text: string, field: 'from' | 'to') => {
     setSearchData(prev => ({ ...prev, [field]: text }));
-    filterSuggestions(text, field);
   };
 
-  const handleSuggestionSelect = (suggestion: string, field: 'from' | 'to') => {
-    setSearchData(prev => ({ ...prev, [field]: suggestion }));
-    setSuggestions(prev => ({ ...prev, [field]: [] }));
-    setActiveInput(null);
-  };
+// Replace the existing handleQuickAction function with this:
 
-  const handleInputFocus = (field: 'from' | 'to') => {
-    setActiveInput(field);
-    if (searchData[field].length > 0) {
-      filterSuggestions(searchData[field], field);
-    }
-  };
+const handleQuickAction = (action: string) => {
+  switch (action) {
+    case 'qr':
+      // Navigate to QR scanner screen
+      router.push('/QRBoardingScreen');
+      break;
+    case 'sos':
+      // Navigate to SOS screen
+      router.push('/sos');
+      break;
+    case 'alerts':
+      // Navigate to notification screen
+      router.push('/notification');
+      break;
+    case 'live-tracking':
+      router.push('/(tabs)/bus-tracking/live-tracking');
+      break;
+    case 'schedule':
+      router.push('/(tabs)/bus-tracking/bus-schedule');
+      break;
+    case 'offline-map':
+      router.push('/(tabs)/bus-tracking/offline-map');
+      break;
+    case 'child':
+      Alert.alert('Child Mode', 'Child safety mode activated');
+      break;
+    case 'favorites':
+      Alert.alert('Favorites', 'Your favorite routes will appear here');
+      break;
+    default:
+      console.log('Unknown action:', action);
+      break;
+  }
+};
 
-  const handleInputBlur = () => {
-    // Delay hiding suggestions to allow for selection
-    setTimeout(() => {
-      setActiveInput(null);
-      setSuggestions({ from: [], to: [] });
-    }, 200);
-  };
-
-  const handleQuickAction = (action: string) => {
-    switch (action) {
-      case 'qr':
-        navigation.navigate('QRScan');
-        break;
-      case 'schedule':
-        setActiveTab('schedule');
-        break;
-      case 'tracking':
-        setActiveTab('tracking');
-        break;
-      case 'sos':
-        navigation.navigate('SOS');
-        break;
-      case 'child':
-        navigation.navigate('ChildMode');
-        break;
-      case 'offline':
-        navigation.navigate('OfflineMap');
-        break;
-      case 'alerts':
-        navigation.navigate('Notifications');
-        break;
-      case 'favorites':
-        Alert.alert('Favorites', 'Your favorite routes will appear here');
-        break;
-      default:
-        break;
-    }
-  };
-
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!searchData.from || !searchData.to) {
       Alert.alert('Error', 'Please enter both from and to locations');
       return;
     }
 
-    // Navigate to search results page with the search data
-    navigation.navigate('SearchResults', {
-      from: searchData.from,
-      to: searchData.to
-    });
+    // Validate city names
+    if (!CITIES.some(city => city.toLowerCase().includes(searchData.from.toLowerCase()))) {
+      Alert.alert('Invalid City', `${searchData.from} is not in Tamil Nadu`);
+      return;
+    }
+
+    if (!CITIES.some(city => city.toLowerCase().includes(searchData.to.toLowerCase()))) {
+      Alert.alert('Invalid City', `${searchData.to} is not in Tamil Nadu`);
+      return;
+    }
+
+    if (searchData.from === searchData.to) {
+      Alert.alert('Error', 'From and To locations cannot be same');
+      return;
+    }
+
+    try {
+      // Navigate to bus schedule with search parameters
+      router.push({
+        pathname: '/(tabs)/bus-tracking/bus-schedule',
+        params: { 
+          from: searchData.from, 
+          to: searchData.to 
+        }
+      });
+      
+      // Save to recent searches
+      const newSearch = {
+        id: Date.now().toString(),
+        from: searchData.from,
+        to: searchData.to,
+        timestamp: 'Just now'
+      };
+      setRecentSearches(prev => [newSearch, ...prev.slice(0, 4)]);
+      
+    } catch (error) {
+      Alert.alert('Error', 'Failed to search. Please try again.');
+      console.error('Error searching:', error);
+    }
   };
 
-  const handleSetAlert = (schedule: any) => {
-    Alert.alert('Alert Set', `You will be notified 10 minutes before ${schedule.time} for ${schedule.route}`);
+  const handleRecentSearchPress = (search: any) => {
+    setSearchData({ from: search.from, to: search.to });
+    // Navigate to schedule with the recent search
+    setTimeout(() => {
+      router.push({
+        pathname: '/(tabs)/bus-tracking/bus-schedule',
+        params: { 
+          from: search.from, 
+          to: search.to 
+        }
+      });
+    }, 100);
+  };
+
+  const handleSetAlert = async (schedule: any) => {
+    try {
+      alert(`Alert set! You will be notified 10 minutes before ${schedule.time} for ${schedule.route}`);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to set alert');
+    }
   };
 
   const handleCurrentBusPress = () => {
     if (currentBus) {
-      navigation.navigate('BusDetails', { 
-        bus: currentBus,
-        currentLocation: currentLocation
+      router.push({
+        pathname: '/(tabs)/bus-tracking/bus-details',
+        params: { 
+          buses: JSON.stringify([currentBus]),
+          searchFrom: currentLocation,
+          searchTo: currentBus.destination
+        }
       });
     }
+  };
+
+  const handleRefresh = () => {
+    refreshTracking();
+    getCurrentLocation();
   };
 
   const QuickActionButton: React.FC<{
@@ -258,26 +372,120 @@ const HomeScreen: React.FC = () => {
       onPress={() => handleQuickAction(action)}
     >
       <View style={[styles.quickActionIconContainer, { backgroundColor: color }]}>
-        <Ionicons name={icon} size={22} color="#E1D4C2" />
+        <Ionicons name={icon as any} size={22} color="#E1D4C2" />
       </View>
       <Text style={styles.quickActionTitle}>{title}</Text>
       {description && <Text style={styles.quickActionDescription}>{description}</Text>}
     </TouchableOpacity>
   );
 
-  const renderSuggestionItem = ({ item }: { item: string }) => (
-    <TouchableOpacity
-      style={styles.suggestionItem}
-      onPress={() => handleSuggestionSelect(item, activeInput!)}
+  const getPassengerLoadColor = (load: number) => {
+    if (load > 80) return '#EF4444';
+    if (load > 50) return '#F59E0B';
+    return '#10B981';
+  };
+
+  const getPassengerLoadText = (load: number) => {
+    if (load > 80) return 'Crowded';
+    if (load > 50) return 'Moderate';
+    return 'Empty';
+  };
+
+  // Add this function in the index.tsx component
+
+const handleEmergencySOS = async () => {
+  Alert.alert(
+    'Emergency SOS',
+    'Do you want to send an emergency alert?',
+    [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Send Alert',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            // Create emergency notification
+            const emergencyAlert = {
+              id: `emergency_${Date.now()}`,
+              title: '🚨 Emergency SOS Alert',
+              message: `${user?.name || 'User'} has triggered an emergency SOS from ${currentLocation || 'their location'}`,
+              type: 'alert' as const,
+              timestamp: Date.now(),
+              isRead: false,
+              priority: 'high' as const,
+              location: currentLocation || 'Unknown location',
+            };
+
+            // Save to Firebase (you'll need to import your firebase functions)
+            const notificationsRef = ref(database, 'notifications');
+            const newNotificationRef = push(notificationsRef);
+            await set(newNotificationRef, emergencyAlert);
+
+            // Navigate to SOS page
+            router.push('/sos');
+            
+            Alert.alert(
+              'Emergency Alert Sent!',
+              'Authorities have been notified. Help is on the way.',
+              [{ text: 'OK' }]
+            );
+          } catch (error) {
+            console.error('Error sending emergency alert:', error);
+            Alert.alert('Error', 'Failed to send emergency alert');
+          }
+        },
+      },
+    ]
+  );
+};
+
+  // City Modal Component
+  const CityModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={showCityModal}
+      onRequestClose={() => setShowCityModal(false)}
     >
-      <Ionicons name="location-outline" size={16} color="#6E473B" />
-      <Text style={styles.suggestionText}>{item}</Text>
-    </TouchableOpacity>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select Tamil Nadu City</Text>
+            <TouchableOpacity 
+              onPress={() => setShowCityModal(false)}
+              style={styles.modalCloseButton}
+            >
+              <Ionicons name="close" size={24} color="#291C0E" />
+            </TouchableOpacity>
+          </View>
+          
+          <FlatList
+            data={CITIES}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.cityItem}
+                onPress={() => handleCitySelect(item)}
+              >
+                <Ionicons name="location-outline" size={20} color="#6E473B" />
+                <Text style={styles.cityText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+            style={styles.cityList}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
+      </View>
+    </Modal>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#291C0E" />
+      <CityModal />
       
       {/* Header */}
       <View style={styles.header}>
@@ -286,12 +494,21 @@ const HomeScreen: React.FC = () => {
             <Text style={styles.greeting}>Hello, {user?.name || 'User'}! 👋</Text>
             <Text style={styles.subtitle}>Welcome to SmartBus</Text>
           </View>
-          <TouchableOpacity 
-            style={styles.profileButton}
-            onPress={() => navigation.navigate('Profile')}
-          >
-            <Ionicons name="person-outline" size={22} color="#E1D4C2" />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity 
+              style={styles.refreshButton}
+              onPress={handleRefresh}
+              disabled={isLoading}
+            >
+              <Ionicons name="refresh" size={20} color="#E1D4C2" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.profileButton}
+              onPress={() => router.push('/(tabs)/profile')}
+            >
+              <Ionicons name="person-outline" size={22} color="#E1D4C2" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -299,64 +516,54 @@ const HomeScreen: React.FC = () => {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={undefined}
       >
         {/* Search Section */}
         <View style={styles.searchSection}>
           <Text style={styles.sectionTitle}>Find Your Bus</Text>
           <View style={styles.searchContainer}>
-            <View style={styles.inputWrapper}>
+            {/* From Input */}
+            <TouchableOpacity 
+              style={styles.inputWrapper}
+              onPress={() => openCityModal('from')}
+            >
               <View style={styles.inputGroup}>
                 <Ionicons name="location-outline" size={20} color="#6E473B" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="From location"
-                  placeholderTextColor="#6E473B"
-                  value={searchData.from}
-                  onChangeText={(text) => handleInputChange(text, 'from')}
-                  onFocus={() => handleInputFocus('from')}
-                  onBlur={handleInputBlur}
-                />
+                <Text style={[styles.input, !searchData.from && styles.inputPlaceholder]}>
+                  {searchData.from || 'From location'}
+                </Text>
+                {isLoadingLocation && searchData.from === currentLocation && (
+                  <ActivityIndicator size="small" color="#6E473B" style={styles.loadingIndicator} />
+                )}
               </View>
-              {activeInput === 'from' && suggestions.from.length > 0 && (
-                <View style={styles.suggestionsContainer}>
-                  <FlatList
-                    data={suggestions.from}
-                    renderItem={renderSuggestionItem}
-                    keyExtractor={(item, index) => index.toString()}
-                    scrollEnabled={false}
-                  />
-                </View>
-              )}
-            </View>
+            </TouchableOpacity>
 
-            <View style={styles.inputWrapper}>
+            {/* To Input */}
+            <TouchableOpacity 
+              style={styles.inputWrapper}
+              onPress={() => openCityModal('to')}
+            >
               <View style={styles.inputGroup}>
                 <Ionicons name="navigate-outline" size={20} color="#6E473B" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="To location"
-                  placeholderTextColor="#6E473B"
-                  value={searchData.to}
-                  onChangeText={(text) => handleInputChange(text, 'to')}
-                  onFocus={() => handleInputFocus('to')}
-                  onBlur={handleInputBlur}
-                />
+                <Text style={[styles.input, !searchData.to && styles.inputPlaceholder]}>
+                  {searchData.to || 'To location'}
+                </Text>
               </View>
-              {activeInput === 'to' && suggestions.to.length > 0 && (
-                <View style={styles.suggestionsContainer}>
-                  <FlatList
-                    data={suggestions.to}
-                    renderItem={renderSuggestionItem}
-                    keyExtractor={(item, index) => index.toString()}
-                    scrollEnabled={false}
-                  />
-                </View>
-              )}
-            </View>
+            </TouchableOpacity>
 
-            <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-              <Ionicons name="search" size={20} color="#291C0E" />
-              <Text style={styles.searchButtonText}>Find Bus</Text>
+            <TouchableOpacity 
+              style={styles.searchButton} 
+              onPress={handleSearch}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#291C0E" />
+              ) : (
+                <>
+                  <Ionicons name="search" size={20} color="#291C0E" />
+                  <Text style={styles.searchButtonText}>Find Bus</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -415,79 +622,99 @@ const HomeScreen: React.FC = () => {
             <View style={styles.tabContent}>
               <Text style={styles.tabContentTitle}>Recent Searches</Text>
               <View style={styles.recentSearches}>
-                <TouchableOpacity style={styles.recentSearchItem}>
-                  <Ionicons name="time-outline" size={16} color="#6E473B" />
-                  <Text style={styles.recentSearchText}>Downtown to University</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.recentSearchItem}>
-                  <Ionicons name="time-outline" size={16} color="#6E473B" />
-                  <Text style={styles.recentSearchText}>Mall to Airport</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.recentSearchItem}>
-                  <Ionicons name="time-outline" size={16} color="#6E473B" />
-                  <Text style={styles.recentSearchText}>Station to Hospital</Text>
-                </TouchableOpacity>
+                {recentSearches.map((search) => (
+                  <TouchableOpacity 
+                    key={search.id} 
+                    style={styles.recentSearchItem}
+                    onPress={() => handleRecentSearchPress(search)}
+                  >
+                    <Ionicons name="time-outline" size={16} color="#6E473B" />
+                    <View style={styles.recentSearchTextContainer}>
+                      <Text style={styles.recentSearchText}>{search.from} → {search.to}</Text>
+                      <Text style={styles.recentSearchTime}>{search.timestamp}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color="#6E473B" />
+                  </TouchableOpacity>
+                ))}
+                {recentSearches.length === 0 && (
+                  <Text style={styles.noRecentText}>No recent searches</Text>
+                )}
               </View>
             </View>
           )}
 
           {activeTab === 'schedule' && (
             <View style={styles.tabContent}>
-              <Text style={styles.tabContentTitle}>Today's Schedule</Text>
-              {schedules.map((schedule) => (
-                <View key={schedule.id} style={styles.scheduleItem}>
+              <Text style={styles.tabContentTitle}>Today's Popular Routes</Text>
+              {liveBuses.slice(0, 3).map((bus) => (
+                <TouchableOpacity 
+                  key={bus.id} 
+                  style={styles.scheduleItem}
+                  onPress={() => router.push({
+                    pathname: '/(tabs)/bus-tracking/bus-details',
+                    params: { buses: JSON.stringify([bus]) }
+                  })}
+                >
                   <View style={styles.scheduleInfo}>
-                    <Text style={styles.scheduleRoute}>{schedule.route}</Text>
-                    <Text style={styles.scheduleTime}>{schedule.time}</Text>
-                    <Text style={styles.scheduleLocation}>{schedule.from} → {schedule.to}</Text>
+                    <Text style={styles.scheduleRoute}>{bus.route || 'Unknown Route'}</Text>
+                    <Text style={styles.scheduleTime}>{bus.departureTime || 'N/A'}</Text>
+                    <Text style={styles.scheduleLocation}>
+                      {bus.source || 'Unknown'} → {bus.destination || 'Unknown'}
+                    </Text>
                   </View>
                   <View style={styles.scheduleActions}>
                     <View style={[
                       styles.statusBadge,
-                      schedule.status === 'Delayed' ? styles.statusDelayed : styles.statusOnTime
+                      bus.status === 'delayed' ? styles.statusDelayed : styles.statusOnTime
                     ]}>
-                      <Text style={styles.statusText}>{schedule.status}</Text>
+                      <Text style={styles.statusText}>
+                        {bus.status === 'delayed' ? 'Delayed' : 'On Time'}
+                      </Text>
                     </View>
-                    <TouchableOpacity 
-                      style={styles.alertButton}
-                      onPress={() => handleSetAlert(schedule)}
-                    >
-                      <Ionicons name="notifications-outline" size={16} color="#6E473B" />
-                      <Text style={styles.alertButtonText}>Alert</Text>
-                    </TouchableOpacity>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           )}
 
           {activeTab === 'tracking' && (
             <View style={styles.tabContent}>
-              <Text style={styles.tabContentTitle}>Nearby Buses</Text>
-              {nearbyBuses.length > 0 ? (
-                nearbyBuses.slice(0, 3).map((bus) => (
-                  <View key={bus.id} style={styles.busItem}>
+              <Text style={styles.tabContentTitle}>Live Buses Near You</Text>
+              {isLoadingBuses ? (
+                <ActivityIndicator size="large" color="#6E473B" style={styles.loadingBuses} />
+              ) : liveBuses.length > 0 ? (
+                liveBuses.slice(0, 3).map((bus) => (
+                  <TouchableOpacity 
+                    key={bus.id} 
+                    style={styles.busItem}
+                    onPress={() => router.push({
+                      pathname: '/(tabs)/bus-tracking/bus-details',
+                      params: { buses: JSON.stringify([bus]) }
+                    })}
+                  >
                     <View style={styles.busInfo}>
-                      <Text style={styles.busRoute}>{bus.route}</Text>
-                      <Text style={styles.busLocation}>Near {bus.currentLocation}</Text>
-                      <Text style={styles.busTime}>Arriving in {bus.arrivalTime} min</Text>
+                      <Text style={styles.busRoute}>{bus.route || 'Unknown Route'}</Text>
+                      <Text style={styles.busLocation}>
+                        Near {bus.currentLocation || currentLocation || 'Your Location'}
+                      </Text>
+                      <Text style={styles.busTime}>
+                        Arriving in {bus.eta || 'Unknown'} min
+                      </Text>
                     </View>
                     <View style={styles.busStatus}>
                       <View style={[
                         styles.busIndicator,
-                        bus.passengerLoad > 80 ? styles.busCrowded : 
-                        bus.passengerLoad > 50 ? styles.busModerate : styles.busEmpty
+                        { backgroundColor: getPassengerLoadColor(bus.passengerLoad || 50) }
                       ]}>
                         <Text style={styles.busLoadText}>
-                          {bus.passengerLoad > 80 ? 'Crowded' : 
-                           bus.passengerLoad > 50 ? 'Moderate' : 'Empty'}
+                          {getPassengerLoadText(bus.passengerLoad || 50)}
                         </Text>
                       </View>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 ))
               ) : (
-                <Text style={styles.noBusesText}>No nearby buses found</Text>
+                <Text style={styles.noBusesText}>No live buses available</Text>
               )}
             </View>
           )}
@@ -536,7 +763,9 @@ const HomeScreen: React.FC = () => {
               <Text style={styles.busLocationLarge}>
                 Current: {isLoadingLocation ? 'Getting location...' : currentLocation}
               </Text>
-              <Text style={styles.busNextStop}>Next Stop: {currentBus.nextStop} • {currentBus.arrivalTime} min</Text>
+              <Text style={styles.busNextStop}>
+                Next Stop: {currentBus.nextStop} • {currentBus.eta} min
+              </Text>
               <View style={styles.progressBar}>
                 <View 
                   style={[
@@ -550,28 +779,28 @@ const HomeScreen: React.FC = () => {
         )}
 
         {/* Emergency Section */}
-        <View style={styles.emergencySection}>
-          <LinearGradient
-            colors={['#EF4444', '#DC2626']} // Red gradient for SOS
-            style={styles.emergencyCard}
-          >
-            <View style={styles.emergencyContent}>
-              <Ionicons name="warning-outline" size={32} color="#fff" />
-              <View style={styles.emergencyText}>
-                <Text style={styles.emergencyTitle}>Emergency SOS</Text>
-                <Text style={styles.emergencyDescription}>
-                  Immediate help with location sharing
-                </Text>
-              </View>
-              <TouchableOpacity 
-                style={styles.sosButton}
-                onPress={() => handleQuickAction('sos')}
-              >
-                <Text style={styles.sosButtonText}>SOS</Text>
-              </TouchableOpacity>
-            </View>
-          </LinearGradient>
-        </View>
+<View style={styles.emergencySection}>
+  <LinearGradient
+    colors={['#EF4444', '#DC2626']}
+    style={styles.emergencyCard}
+  >
+    <View style={styles.emergencyContent}>
+      <Ionicons name="warning-outline" size={32} color="#fff" />
+      <View style={styles.emergencyText}>
+        <Text style={styles.emergencyTitle}>Emergency SOS</Text>
+        <Text style={styles.emergencyDescription}>
+          Immediate help with location sharing
+        </Text>
+      </View>
+      <TouchableOpacity 
+        style={styles.sosButton}
+        onPress={handleEmergencySOS}
+      >
+        <Text style={styles.sosButtonText}>SOS</Text>
+      </TouchableOpacity>
+    </View>
+  </LinearGradient>
+</View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -602,6 +831,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#BEB5A9',
     marginTop: 4,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  refreshButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(110, 71, 59, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(167, 141, 120, 0.2)',
   },
   profileButton: {
     width: 44,
@@ -665,48 +908,21 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     backgroundColor: '#F8F5F0',
-    zIndex: 1,
+    height: 56,
   },
   inputIcon: {
     marginRight: 12,
   },
   input: {
     flex: 1,
-    paddingVertical: 16,
     fontSize: 16,
     color: '#291C0E',
   },
-  suggestionsContainer: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(167, 141, 120, 0.3)',
-    borderTopWidth: 0,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
-    marginTop: -8,
-    zIndex: 1000,
-    elevation: 8,
-    shadowColor: '#291C0E',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
+  inputPlaceholder: {
+    color: '#6E473B',
   },
-  suggestionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(167, 141, 120, 0.1)',
-    gap: 8,
-  },
-  suggestionText: {
-    fontSize: 14,
-    color: '#291C0E',
-    fontWeight: '400',
+  loadingIndicator: {
+    marginLeft: 8,
   },
   searchButton: {
     flexDirection: 'row',
@@ -721,6 +937,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
+    marginTop: 8,
   },
   searchButtonText: {
     color: '#291C0E',
@@ -825,9 +1042,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(167, 141, 120, 0.2)',
   },
+  recentSearchTextContainer: {
+    flex: 1,
+  },
   recentSearchText: {
     fontSize: 14,
+    color: '#291C0E',
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  recentSearchTime: {
+    fontSize: 12,
     color: '#6E473B',
+  },
+  noRecentText: {
+    textAlign: 'center',
+    color: '#6E473B',
+    fontSize: 14,
+    padding: 20,
+    fontWeight: '400',
   },
   scheduleItem: {
     flexDirection: 'row',
@@ -881,16 +1114,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#291C0E',
   },
-  alertButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  alertButtonText: {
-    fontSize: 12,
-    color: '#6E473B',
-    fontWeight: '600',
-  },
   busItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -931,19 +1154,13 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
   },
-  busEmpty: {
-    backgroundColor: '#E1D4C2',
-  },
-  busModerate: {
-    backgroundColor: '#F8E9C2',
-  },
-  busCrowded: {
-    backgroundColor: '#F8D7C2',
-  },
   busLoadText: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#291C0E',
+    color: '#FFFFFF',
+  },
+  loadingBuses: {
+    padding: 40,
   },
   noBusesText: {
     textAlign: 'center',
@@ -1074,6 +1291,50 @@ const styles = StyleSheet.create({
     color: '#DC2626',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(41, 28, 14, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(167, 141, 120, 0.2)',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#291C0E',
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  cityList: {
+    maxHeight: 400,
+  },
+  cityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(167, 141, 120, 0.1)',
+    gap: 12,
+  },
+  cityText: {
+    fontSize: 16,
+    color: '#291C0E',
+    fontWeight: '400',
   },
 });
 

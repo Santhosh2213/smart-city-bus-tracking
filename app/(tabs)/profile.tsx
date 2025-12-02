@@ -1,4 +1,4 @@
-// app/(tabs)/profile.tsx
+// app/(tabs)/profile.tsx - FIXED VERSION
 import React, { useContext } from 'react';
 import {
   View,
@@ -36,6 +36,7 @@ const ProfileScreen: React.FC = () => {
           style: 'destructive',
           onPress: () => {
             logout();
+            router.replace('/login');
           },
         },
       ]

@@ -19,6 +19,13 @@ export default function BusTrackingLayout() {
         }} 
       />
       <Stack.Screen 
+        name="bus-schedule" 
+        options={{ 
+          headerShown: false,
+          title: 'Bus Schedule'
+        }} 
+      />
+      <Stack.Screen 
         name="offline-map" 
         options={{ 
           headerShown: false,

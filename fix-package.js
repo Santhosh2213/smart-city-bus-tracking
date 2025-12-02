@@ -1,4 +1,10 @@
-{
+// fix-package.js
+const fs = require('fs');
+const path = require('path');
+
+const packageJsonPath = path.join(__dirname, 'package.json');
+
+const correctPackageJson = {
   "name": "bus_tracking_app",
   "main": "expo-router/entry",
   "version": "1.0.0",
@@ -21,14 +27,10 @@
     "@react-navigation/stack": "^7.6.7",
     "axios": "^1.13.2",
     "expo": "~54.0.25",
-    "expo-av": "~16.0.7",
-    "expo-barcode-scanner": "^13.0.1",
-    "expo-camera": "~17.0.9",
     "expo-constants": "~18.0.10",
     "expo-font": "~14.0.9",
     "expo-haptics": "~15.0.7",
     "expo-image": "~3.0.10",
-    "expo-image-picker": "~17.0.8",
     "expo-linear-gradient": "~15.0.7",
     "expo-linking": "~8.0.9",
     "expo-location": "~19.0.7",
@@ -38,7 +40,6 @@
     "expo-symbols": "~1.0.7",
     "expo-system-ui": "~6.0.8",
     "expo-web-browser": "~15.0.9",
-    "firebase": "^12.6.0",
     "qrcode": "^1.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -55,10 +56,12 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
-    "@types/react-native": "^0.72.8",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.2"
   },
   "private": true
-}
+};
+
+fs.writeFileSync(packageJsonPath, JSON.stringify(correctPackageJson, null, 2));
+console.log('✅ package.json fixed successfully!');

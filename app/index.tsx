@@ -1,4 +1,4 @@
-// app/index.tsx - REDESIGNED STYLES
+// app/index.tsx - FIXED VERSION
 import React from 'react';
 import {
   View,
@@ -11,11 +11,12 @@ import {
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function LandingPage() {
   const { width } = useWindowDimensions();
+  const router = useRouter();
   const isSmallScreen = width < 375;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(50)).current;
@@ -71,6 +72,7 @@ export default function LandingPage() {
       title: 'Offline Maps',
       description: 'Access maps without internet connection',
       color: ['#6E473B', '#A78D78'],
+      action: 'offline-map' // Add this action
     },
   ];
 
@@ -234,19 +236,25 @@ export default function LandingPage() {
         
         <View style={styles.featuresGrid}>
           {features.map((feature, index) => (
-            <TouchableOpacity key={index} style={styles.featureCard}>
+            <TouchableOpacity key={index} style={styles.featureCard}
+            onPress={() => {
+              if (feature.action === 'offline-map') {
+                router.push('/bus-tracking/offline-map');
+              }
+            }}
+          >
               <LinearGradient
-                colors={feature.color}
-                style={styles.featureIconContainer}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Ionicons name={feature.icon} size={22} color="#E1D4C2" />
-              </LinearGradient>
-              <Text style={styles.featureTitle}>{feature.title}</Text>
-              <Text style={styles.featureDescription}>{feature.description}</Text>
-            </TouchableOpacity>
-          ))}
+      colors={feature.color}
+      style={styles.featureIconContainer}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <Ionicons name={feature.icon} size={22} color="#E1D4C2" />
+    </LinearGradient>
+    <Text style={styles.featureTitle}>{feature.title}</Text>
+    <Text style={styles.featureDescription}>{feature.description}</Text>
+  </TouchableOpacity>
+))}
         </View>
       </View>
 
@@ -293,7 +301,10 @@ export default function LandingPage() {
           <Text style={styles.navText}>Alerts</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => router.push('/login')}
+        >
           <View style={styles.navIcon}>
             <Ionicons name="person-outline" size={22} color="#6E473B" />
           </View>
@@ -320,7 +331,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 16,
     backgroundColor: 'rgba(41, 28, 14, 0.95)',
-    backdropFilter: 'blur(10px)',
     position: 'absolute',
     top: 0,
     left: 0,

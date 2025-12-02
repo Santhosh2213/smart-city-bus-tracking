@@ -1,4 +1,4 @@
-// app/about.tsx - FIXED VERSION
+// app/about.tsx - UPDATED WITH INDEX COLOR SCHEME
 import React from 'react';
 import {
   View,
@@ -63,11 +63,11 @@ export default function AboutScreen() {
       style={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <StatusBar barStyle="light-content" backgroundColor="#1a73e8" />
+      <StatusBar barStyle="light-content" backgroundColor="#291C0E" />
       
       {/* Hero Section */}
       <LinearGradient
-        colors={['#1a73e8', '#4285f4', '#5c9bf2']}
+        colors={['#291C0E', '#6E473B', '#8B5A4A']}
         style={styles.heroSection}
       >
         <View style={styles.heroContent}>
@@ -97,7 +97,7 @@ export default function AboutScreen() {
       {/* Values Section */}
       <View style={styles.sectionDark}>
         <LinearGradient
-          colors={['#2c3e50', '#34495e']}
+          colors={['#291C0E', '#6E473B']}
           style={styles.valuesSection}
         >
           <Text style={styles.sectionTitleLight}>Our Values</Text>
@@ -124,7 +124,7 @@ export default function AboutScreen() {
           {teamMembers.map((member, index) => (
             <View key={index} style={styles.teamCard}>
               <LinearGradient
-                colors={['#4285F4', '#34A853']}
+                colors={['#6E473B', '#8B5A4A']}
                 style={styles.teamImage}
               >
                 <Text style={styles.teamInitial}>
@@ -188,7 +188,7 @@ export default function AboutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F8F5F0',
   },
   heroSection: {
     minHeight: 200,
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#E1D4C2',
     marginBottom: 16,
     textAlign: 'center',
   },
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   },
   heroSubtitle: {
     fontSize: 20,
-    color: '#ffffff',
+    color: '#E1D4C2',
     textAlign: 'center',
     fontWeight: '600',
   },
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   section: {
     paddingVertical: 60,
     paddingHorizontal: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FFFFFF',
   },
   sectionDark: {
     paddingVertical: 0,
@@ -234,24 +234,25 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 32,
     fontWeight: 'bold',
+    color: '#291C0E',
   },
   sectionTitleLight: {
     textAlign: 'center',
     marginBottom: 20,
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#E1D4C2',
   },
   sectionSubtitle: {
     textAlign: 'center',
     fontSize: 16,
-    color: '#666',
+    color: '#6E473B',
     marginBottom: 40,
     lineHeight: 24,
   },
   sectionText: {
     fontSize: 16,
-    color: '#666',
+    color: '#6E473B',
     lineHeight: 24,
     marginBottom: 20,
     textAlign: 'center',
@@ -270,7 +271,7 @@ const styles = StyleSheet.create({
     width: '48%',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(225, 212, 194, 0.1)',
     borderRadius: 16,
     marginBottom: 16,
   },
@@ -281,13 +282,13 @@ const styles = StyleSheet.create({
   valueTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#E1D4C2',
     marginBottom: 8,
     textAlign: 'center',
   },
   valueDescription: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(225, 212, 194, 0.8)',
     textAlign: 'center',
     lineHeight: 16,
   },
@@ -297,7 +298,7 @@ const styles = StyleSheet.create({
   teamCard: {
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#F8F5F0',
     borderRadius: 16,
     marginBottom: 20,
   },
@@ -312,29 +313,29 @@ const styles = StyleSheet.create({
   teamInitial: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#E1D4C2',
   },
   teamName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#291C0E',
     marginBottom: 4,
   },
   teamRole: {
     fontSize: 14,
-    color: '#1a73e8',
+    color: '#6E473B',
     fontWeight: '600',
     marginBottom: 8,
   },
   teamDescription: {
     fontSize: 12,
-    color: '#666',
+    color: '#6E473B',
     textAlign: 'center',
     lineHeight: 16,
   },
   statsSection: {
     paddingVertical: 40,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#F8F5F0',
   },
   statsGrid: {
     flexDirection: 'row',
@@ -350,12 +351,12 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1a73e8',
+    color: '#6E473B',
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#291C0E',
     textAlign: 'center',
     fontWeight: '500',
   },
@@ -366,13 +367,13 @@ const styles = StyleSheet.create({
     marginTop: 30,
   },
   primaryButton: {
-    backgroundColor: '#34A853',
+    backgroundColor: '#6E473B',
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 12,
   },
   primaryButtonText: {
-    color: '#ffffff',
+    color: '#E1D4C2',
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -382,10 +383,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#1a73e8',
+    borderColor: '#6E473B',
   },
   secondaryButtonText: {
-    color: '#1a73e8',
+    color: '#6E473B',
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',

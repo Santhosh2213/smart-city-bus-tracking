@@ -1,4 +1,4 @@
-// app/contact.tsx - FIXED VERSION
+// app/contact.tsx - UPDATED WITH INDEX COLOR SCHEME
 import React, { useState } from 'react';
 import {
   View,
@@ -77,11 +77,11 @@ export default function ContactScreen() {
       style={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <StatusBar barStyle="light-content" backgroundColor="#1a73e8" />
+      <StatusBar barStyle="light-content" backgroundColor="#291C0E" />
       
       {/* Hero Section */}
       <LinearGradient
-        colors={['#1a73e8', '#4285f4', '#5c9bf2']}
+        colors={['#291C0E', '#6E473B', '#8B5A4A']}
         style={styles.heroSection}
       >
         <View style={styles.heroContent}>
@@ -95,13 +95,13 @@ export default function ContactScreen() {
       </LinearGradient>
 
       {/* Contact Methods */}
-      <ThemedView style={styles.section}>
-        <ThemedText type="title" style={styles.sectionTitle}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>
           Get In Touch
-        </ThemedText>
-        <ThemedText style={styles.sectionSubtitle}>
+        </Text>
+        <Text style={styles.sectionSubtitle}>
           Choose your preferred way to reach us
-        </ThemedText>
+        </Text>
         
         <View style={styles.contactGrid}>
           {contactMethods.map((method, index) => (
@@ -113,17 +113,17 @@ export default function ContactScreen() {
             </View>
           ))}
         </View>
-      </ThemedView>
+      </View>
 
       {/* Contact Form */}
-      <ThemedView style={styles.sectionDark}>
+      <View style={styles.sectionDark}>
         <LinearGradient
-          colors={['#2c3e50', '#34495e']}
+          colors={['#291C0E', '#6E473B']}
           style={styles.formSection}
         >
-          <ThemedText type="title" style={styles.sectionTitleLight}>
+          <Text style={styles.sectionTitleLight}>
             Send us a Message
-          </ThemedText>
+          </Text>
           
           <View style={styles.form}>
             <View style={styles.inputGroup}>
@@ -133,7 +133,7 @@ export default function ContactScreen() {
                 value={formData.name}
                 onChangeText={(text) => setFormData({...formData, name: text})}
                 placeholder="Enter your full name"
-                placeholderTextColor="#999"
+                placeholderTextColor="#BEB5A9"
               />
             </View>
             
@@ -144,7 +144,7 @@ export default function ContactScreen() {
                 value={formData.email}
                 onChangeText={(text) => setFormData({...formData, email: text})}
                 placeholder="Enter your email"
-                placeholderTextColor="#999"
+                placeholderTextColor="#BEB5A9"
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
@@ -157,7 +157,7 @@ export default function ContactScreen() {
                 value={formData.subject}
                 onChangeText={(text) => setFormData({...formData, subject: text})}
                 placeholder="Enter subject"
-                placeholderTextColor="#999"
+                placeholderTextColor="#BEB5A9"
               />
             </View>
             
@@ -168,7 +168,7 @@ export default function ContactScreen() {
                 value={formData.message}
                 onChangeText={(text) => setFormData({...formData, message: text})}
                 placeholder="Enter your message"
-                placeholderTextColor="#999"
+                placeholderTextColor="#BEB5A9"
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
@@ -180,17 +180,17 @@ export default function ContactScreen() {
               onPress={handleSubmit}
             >
               <Text style={styles.submitButtonText}>Send Message</Text>
-              <Ionicons name="send" size={20} color="#fff" />
+              <Ionicons name="send" size={20} color="#291C0E" />
             </TouchableOpacity>
           </View>
         </LinearGradient>
-      </ThemedView>
+      </View>
 
       {/* FAQ Section */}
-      <ThemedView style={styles.section}>
-        <ThemedText type="title" style={styles.sectionTitle}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>
           Frequently Asked Questions
-        </ThemedText>
+        </Text>
         
         <View style={styles.faqList}>
           <View style={styles.faqItem}>
@@ -225,20 +225,20 @@ export default function ContactScreen() {
             </Text>
           </View>
         </View>
-      </ThemedView>
+      </View>
 
       {/* CTA Section */}
-      <ThemedView style={styles.section}>
-        <ThemedText type="title" style={styles.sectionTitle}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>
           Need Immediate Help?
-        </ThemedText>
-        <ThemedText style={styles.sectionSubtitle}>
+        </Text>
+        <Text style={styles.sectionSubtitle}>
           Our support team is available 24/7 to assist you
-        </ThemedText>
+        </Text>
         
         <View style={styles.ctaButtons}>
           <TouchableOpacity style={styles.primaryButton}>
-            <Ionicons name="call" size={20} color="#fff" />
+            <Ionicons name="call" size={20} color="#291C0E" />
             <Text style={styles.primaryButtonText}>Call Support</Text>
           </TouchableOpacity>
           
@@ -248,7 +248,7 @@ export default function ContactScreen() {
             </TouchableOpacity>
           </Link>
         </View>
-      </ThemedView>
+      </View>
     </ScrollView>
   );
 }
@@ -256,7 +256,7 @@ export default function ContactScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F8F5F0',
   },
   heroSection: {
     minHeight: 200,
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#E1D4C2',
     marginBottom: 16,
     textAlign: 'center',
   },
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
   },
   heroSubtitle: {
     fontSize: 20,
-    color: '#ffffff',
+    color: '#E1D4C2',
     textAlign: 'center',
     fontWeight: '600',
   },
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   section: {
     paddingVertical: 60,
     paddingHorizontal: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FFFFFF',
   },
   sectionDark: {
     paddingVertical: 0,
@@ -302,18 +302,19 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 32,
     fontWeight: 'bold',
+    color: '#291C0E',
   },
   sectionTitleLight: {
     textAlign: 'center',
     marginBottom: 20,
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#E1D4C2',
   },
   sectionSubtitle: {
     textAlign: 'center',
     fontSize: 16,
-    color: '#666',
+    color: '#6E473B',
     marginBottom: 40,
     lineHeight: 24,
   },
@@ -326,7 +327,7 @@ const styles = StyleSheet.create({
   contactCard: {
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#F8F5F0',
     borderRadius: 16,
     marginBottom: 20,
   },
@@ -337,20 +338,20 @@ const styles = StyleSheet.create({
   contactTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#291C0E',
     marginBottom: 8,
     textAlign: 'center',
   },
   contactValue: {
     fontSize: 14,
-    color: '#1a73e8',
+    color: '#6E473B',
     fontWeight: '600',
     marginBottom: 4,
     textAlign: 'center',
   },
   contactDescription: {
     fontSize: 12,
-    color: '#666',
+    color: '#6E473B',
     textAlign: 'center',
     lineHeight: 16,
   },
@@ -369,17 +370,17 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#ffffff',
+    color: '#E1D4C2',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(225, 212, 194, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: 'rgba(225, 212, 194, 0.3)',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    color: '#ffffff',
+    color: '#E1D4C2',
     fontSize: 16,
   },
   textArea: {
@@ -390,7 +391,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#34A853',
+    backgroundColor: '#E1D4C2',
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 12,
@@ -398,7 +399,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   submitButtonText: {
-    color: '#ffffff',
+    color: '#291C0E',
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -406,19 +407,19 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   faqItem: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#F8F5F0',
     padding: 20,
     borderRadius: 12,
   },
   faqQuestion: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#291C0E',
     marginBottom: 8,
   },
   faqAnswer: {
     fontSize: 14,
-    color: '#666',
+    color: '#6E473B',
     lineHeight: 20,
   },
   ctaButtons: {
@@ -430,7 +431,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#34A853',
+    backgroundColor: '#E1D4C2',
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 30,
@@ -440,12 +441,12 @@ const styles = StyleSheet.create({
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 8,
   },
   primaryButtonText: {
-    color: '#ffffff',
+    color: '#291C0E',
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -454,10 +455,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 30,
     borderWidth: 2,
-    borderColor: '#1a73e8',
+    borderColor: '#6E473B',
   },
   secondaryButtonText: {
-    color: '#1a73e8',
+    color: '#6E473B',
     fontSize: 18,
     fontWeight: '600',
   },
